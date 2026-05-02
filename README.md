@@ -1,16 +1,145 @@
-# React + Vite
+# 🏗️ ArchiVek – Architecture Portfolio Website
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern, responsive architecture portfolio website built with React and Tailwind CSS.
+This project includes dynamic sections with edit, add, and delete functionality ready for backend API integration.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 👨‍💻 Author
 
-## React Compiler
+Developed by [Apon Talukder]
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🚀 Features
 
-## Expanding the ESLint configuration
+- ✅ Fully Responsive Design (Mobile, Tablet, Desktop)
+- ✅ Modern UI using Tailwind CSS
+- ✅ Dynamic Sections:
+  - About
+  - Story (Our Story)
+  - Services
+  - Projects
+  - Contact
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- ✅ Edit Mode (`/edit` route)
+- ✅ Add / Edit / Delete functionality (Frontend + API ready)
+- ✅ Image Upload Preview Support
+- ✅ Clean Component-Based Structure
+
+---
+
+## 🛠️ Technologies Used
+
+- ⚛️ React (Functional Components)
+- 🎨 Tailwind CSS
+- 🔀 React Router DOM
+- 📦 JavaScript (ES6+)
+
+---
+
+## 📁 Project Structure
+
+```
+src/
+│
+├── Components/
+│   ├── Navbar.jsx
+│   ├── About.jsx
+│   ├── AboutSnd.jsx
+│   ├── Service.jsx
+│   ├── Projects.jsx
+│   ├── Contact.jsx
+│   ├── Footer.jsx
+│
+├── App.jsx
+└── main.jsx
+```
+
+---
+
+## 🧠 How Edit Mode Works
+
+- `/` → Normal View
+- `/edit` → Edit Mode Enabled
+
+In edit mode:
+
+- ✏️ Edit buttons appear
+- 🗑 Delete option available
+- ➕ Add new content via modal
+
+---
+
+## 🔗 Backend Integration (Ready)
+
+API integration is prepared using fetch.
+
+### Example:
+
+```js
+// CREATE
+fetch("/services", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(data),
+});
+
+// UPDATE
+fetch(`/services/${id}`, {
+  method: "PUT",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(data),
+});
+
+// DELETE
+fetch(`/services/${id}`, {
+  method: "DELETE",
+});
+```
+
+---
+
+## 🖼 Image Upload
+
+Uses preview system:
+
+```js
+const preview = URL.createObjectURL(file);
+```
+
+Backend upload can be added using FormData.
+
+---
+
+## ⚙️ Installation
+
+```bash
+npm install
+npm run dev
+```
+
+---
+
+## 🌐 Routing
+
+```jsx
+<Route path="/" element={<Home editMode={false} />} />
+<Route path="/edit" element={<Home editMode={true} />} />
+```
+
+---
+
+## ✨ Future Improvements
+
+- 🔐 Admin Authentication
+- 🧑‍💻 Dashboard Panel
+- ☁️ Cloud Image Upload
+- 📦 Database Integration (MongoDB / Firebase)
+- 🎨 Animation Enhancements
+
+---
+
+---
+
+## 📄 License
+
+This project is open-source and free to use.
