@@ -179,7 +179,7 @@ export default function Services({ editMode }) {
       <div className="max-w-[1300px] mx-auto px-4 sm:px-6 grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-8">
         {services.map((item, index) => (
           <div
-            key={item.id}
+            key={index}
             className="p-5 sm:p-6 md:p-8 flex flex-col justify-between relative group transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
             style={{ background: item.bg }}
           >
