@@ -33,7 +33,7 @@ function Home({ editMode }) {
         </section>
       </div>
 
-      <Footer />
+      <Footer editMode={editMode} />
     </>
   );
 }

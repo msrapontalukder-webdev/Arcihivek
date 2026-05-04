@@ -249,9 +249,12 @@ export default function Services({ editMode }) {
 
             {/* ORIGINAL DESIGN */}
             <div>
-              <p className="text-[10px] uppercase bg-[#d9d9d9] px-2 py-[2px] inline-block mb-3 rounded-sm">
-                {item.tag}
-              </p>
+              {/* Only render tag if it exists */}
+              {item.tag && (
+                <p className="text-[10px] uppercase bg-[#d9d9d9] px-2 py-[2px] inline-block mb-3 rounded-sm">
+                  {item.tag}
+                </p>
+              )}
 
               <h2
                 className="text-xl sm:text-2xl md:text-[36px] font-semibold mb-4 leading-tight"
@@ -278,18 +281,25 @@ export default function Services({ editMode }) {
                 className="flex justify-between text-[10px] sm:text-[11px] mb-4"
                 style={{ color: item.text }}
               >
-                <div>
-                  <p className="opacity-80">PROJECTS</p>
-                  <p className="font-semibold">{item.projects}</p>
-                </div>
-                <div>
-                  <p className="opacity-80">EXPERIENCE</p>
-                  <p className="font-semibold">{item.exp}</p>
-                </div>
-                <div>
-                  <p className="opacity-80">IMPACT</p>
-                  <p className="font-semibold">{item.impact}</p>
-                </div>
+                {/* Conditionals added: Deleting the text in the edit menu will remove the section entirely */}
+                {item.projects && (
+                  <div>
+                    <p className="opacity-80">PROJECTS</p>
+                    <p className="font-semibold">{item.projects}</p>
+                  </div>
+                )}
+                {item.exp && (
+                  <div>
+                    <p className="opacity-80">EXPERIENCE</p>
+                    <p className="font-semibold">{item.exp}</p>
+                  </div>
+                )}
+                {item.impact && (
+                  <div>
+                    <p className="opacity-80">IMPACT</p>
+                    <p className="font-semibold">{item.impact}</p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -318,19 +328,56 @@ export default function Services({ editMode }) {
               className="mb-4 text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-black hover:file:bg-gray-200"
             />
 
-            <input
-              name="title"
-              value={editData.title}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded-md p-2.5 mb-3 focus:outline-none focus:ring-2 focus:ring-black transition-all"
-            />
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <input
+                name="tag"
+                value={editData.tag || ""}
+                onChange={handleChange}
+                placeholder="Tag"
+                className="col-span-2 w-full border border-gray-300 rounded-md p-2.5 focus:outline-none focus:ring-2 focus:ring-black transition-all"
+              />
+              <input
+                name="title"
+                value={editData.title || ""}
+                onChange={handleChange}
+                placeholder="Title"
+                className="col-span-2 w-full border border-gray-300 rounded-md p-2.5 focus:outline-none focus:ring-2 focus:ring-black transition-all"
+              />
+            </div>
+
             <textarea
               name="desc"
-              value={editData.desc}
+              value={editData.desc || ""}
               onChange={handleChange}
               rows="3"
-              className="w-full border border-gray-300 rounded-md p-2.5 mb-4 focus:outline-none focus:ring-2 focus:ring-black transition-all"
+              placeholder="Description"
+              className="w-full border border-gray-300 rounded-md p-2.5 mb-3 focus:outline-none focus:ring-2 focus:ring-black transition-all"
             />
+
+            {/* Added Inputs for Projects, Experience, and Impact */}
+            <div className="grid grid-cols-3 gap-3 mb-4">
+              <input
+                name="projects"
+                value={editData.projects || ""}
+                placeholder="Projects (95+)"
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded-md p-2.5 focus:outline-none focus:ring-2 focus:ring-black transition-all text-sm"
+              />
+              <input
+                name="exp"
+                value={editData.exp || ""}
+                placeholder="Exp (28+ YEARS)"
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded-md p-2.5 focus:outline-none focus:ring-2 focus:ring-black transition-all text-sm"
+              />
+              <input
+                name="impact"
+                value={editData.impact || ""}
+                placeholder="Impact (€1.8B)"
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded-md p-2.5 focus:outline-none focus:ring-2 focus:ring-black transition-all text-sm"
+              />
+            </div>
 
             <div className="flex justify-end gap-3">
               <button
