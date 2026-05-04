@@ -1,32 +1,42 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import API from "../hooks/axios";
+
+// Base API URL
+const BASE_URL = "https://archivek-professional-architecture.vercel.app";
+
+const initialProjects = [
+  {
+    id: "1",
+    img: "/project1.png",
+    desc: "This architecture project explores the balance between modern design...",
+    align: "left",
+  },
+  {
+    id: "2",
+    img: "/project2.png",
+    desc: "Large openings and thoughtful layouts create a seamless connection...",
+    align: "right",
+  },
+  {
+    id: "3",
+    img: "/project3.png",
+    desc: "this project focuses on creating a dynamic and adaptable space...",
+    align: "left",
+  },
+  {
+    id: "4",
+    img: "/project4.png",
+    desc: "emphasis is placed on material contrast...",
+    align: "right",
+  },
+];
 
 export default function Projects({ editMode }) {
-  const [projects, setProjects] = useState([
-    {
-      id: 1,
-      img: "/project1.png",
-      desc: "This architecture project explores the balance between modern design and functionalliving, focusing on clean geometry, natural lighting, and efficient space planning. The concept emphasizes simplicity while maintaining a strong visual identitythroug theuse of minimal materials and structured forms..",
-      align: "left",
-    },
-    {
-      id: 2,
-      img: "/project2.png",
-      desc: "Large openings and thoughtful layouts create a seamless connection between interior and exterior environments, enhancing both comfort and sustainability. The design not only reflects contemporary aesthetics but also prioritizes user experience, ensuring that every space serves a clear purpose while contributing to the overall harmony of the structure..",
-      align: "right",
-    },
-    {
-      id: 3,
-      img: "/project3.png",
-      desc: "this project focuses on creating a dynamic and adaptable space that responds to both user needs and environmental conditions. the design integrates open-plan layouts with strategic zoning to ensure privacy while maintaining visual continuity.",
-      align: "left",
-    },
-    {
-      id: 4,
-      img: "/project4.png",
-      desc: "emphasis is placed on material contrast, combining textures and tones to add depth and character to the structure. natural ventilation and lighting are used as key elements to improve energy efficiency and coverall, the project presents a modern architectural approach that balances aesthetics, functionality, ",
-      align: "right",
-    },
-  ]);
+  // Initialized with the JSON formatted data
+  const [projects, setProjects] = useState(initialProjects);
+
+  // REQUIRED: State to store the MongoDB Master Document ID
+  const [parentId, setParentId] = useState(null);
 
   const [openAddModal, setOpenAddModal] = useState(false);
   const [openEditModal, setOpenEditModal] = useState(false);
@@ -37,7 +47,31 @@ export default function Projects({ editMode }) {
   const [newData, setNewData] = useState({
     desc: "",
     img: "",
+    file: null,
   });
+
+  // ================= FETCH =================
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const res = await API.get(`${BASE_URL}/projects`);
+
+        // Backend returns: [{ _id: "...", items: [...] }]
+        if (res.data && res.data.length > 0) {
+          const document = res.data[0];
+          setParentId(document._id); // Save the Master ID
+
+          // Only overwrite the JSON state if the database actually has items
+          if (document.items && document.items.length > 0) {
+            setProjects(document.items);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch backend projects:", err);
+      }
+    };
+    fetchProjects();
+  }, []);
 
   // ================= ADD =================
   const handleChange = (e) => {
@@ -48,34 +82,41 @@ export default function Projects({ editMode }) {
     const file = e.target.files[0];
     if (file) {
       const preview = URL.createObjectURL(file);
-      setNewData({ ...newData, img: preview });
+      setNewData({ ...newData, img: preview, file: file });
     }
   };
 
   const handleAdd = async () => {
+    // Determine alignment based on current length for the backend data
+    const align = projects.length % 2 === 0 ? "left" : "right";
+
     const newProject = {
-      ...newData,
-      id: Date.now(),
-      align: projects.length % 2 === 0 ? "left" : "right",
+      id: Date.now().toString(),
+      desc: newData.desc,
+      img: newData.img,
+      align: align,
     };
 
+    // 1. Update UI instantly
     setProjects((prev) => [...prev, newProject]);
-
-    // BACKEND CREATE
-    // await fetch("/projects", {
-    //   method: "POST",
-    //   headers: { "Content-Type": "application/json" },
-    //   body: JSON.stringify(newProject),
-    // });
-
     setOpenAddModal(false);
-    setNewData({ desc: "", img: "" });
+
+    // 2. BACKEND CREATE (PUT /addProjectsList/:id)
+    try {
+      if (parentId) {
+        await API.put(`${BASE_URL}/addProjectsList/${parentId}`, newProject);
+      }
+    } catch (err) {
+      console.error("Error creating project:", err);
+    }
+
+    setNewData({ desc: "", img: "", file: null });
   };
 
   // ================= EDIT =================
   const handleEdit = (index) => {
     setActiveIndex(index);
-    setEditData(projects[index]);
+    setEditData({ ...projects[index], file: null });
     setOpenEditModal(true);
   };
 
@@ -87,46 +128,62 @@ export default function Projects({ editMode }) {
     const file = e.target.files[0];
     if (file) {
       const preview = URL.createObjectURL(file);
-      setEditData({ ...editData, img: preview });
+      setEditData({ ...editData, img: preview, file: file });
     }
   };
 
   const handleUpdate = async () => {
+    const targetItemsId = editData.id;
+
+    // 1. Update UI instantly
     const updated = [...projects];
     updated[activeIndex] = editData;
     setProjects(updated);
-
-    // BACKEND UPDATE
-    // await fetch(`/projects/${editData.id}`, {
-    //   method: "PUT",
-    //   headers: { "Content-Type": "application/json" },
-    //   body: JSON.stringify(editData),
-    // });
-
     setOpenEditModal(false);
+
+    // 2. BACKEND UPDATE (PUT /project/:id/:items_id)
+    try {
+      if (parentId) {
+        await API.put(
+          `${BASE_URL}/project/${parentId}/${targetItemsId}`,
+          editData,
+        );
+      }
+    } catch (err) {
+      console.error("Error updating project:", err);
+    }
   };
 
   // ================= DELETE =================
   const handleDelete = async (id) => {
-    if (!confirm("Delete this project?")) return;
+    if (!window.confirm("Delete this project?")) return;
 
-    setProjects((prev) => prev.filter((item) => item.id !== id));
+    // Find the item to get its specific items_id
+    const itemToDelete = projects.find((item) => (item._id || item.id) === id);
+    const targetItemsId = itemToDelete?.id;
 
-    // BACKEND DELETE
-    // await fetch(`/projects/${id}`, {
-    //   method: "DELETE",
-    // });
+    // 1. Update UI instantly
+    setProjects((prev) => prev.filter((item) => (item._id || item.id) !== id));
+
+    // 2. BACKEND DELETE (PUT /delete/project/:id/:items_id)
+    try {
+      if (parentId && targetItemsId) {
+        await API.put(
+          `${BASE_URL}/delete/project/${parentId}/${targetItemsId}`,
+        );
+      }
+    } catch (err) {
+      console.error("Error deleting project:", err);
+    }
   };
 
   return (
     <section id="projects" className="bg-[#ffffff] py-16">
       <div className="max-w-[1200px] mx-auto px-4">
-        {/* TITLE */}
         <h1 className="text-3xl md:text-5xl font-bold text-center mb-16">
           PROJECTS
         </h1>
 
-        {/* ADD BUTTON */}
         {editMode && (
           <div className="flex justify-end mb-10">
             <button
@@ -138,18 +195,17 @@ export default function Projects({ editMode }) {
           </div>
         )}
 
-        {/* PROJECT LIST */}
         {projects.map((item, index) => (
           <div
-            key={item.id}
-            className={`mb-20 flex flex-col md:flex-row ${
-              item.align === "right" ? "md:justify-end" : "items-start"
-            } gap-10`}
+            key={item._id || item.id || index}
+            // DYNAMIC ALIGNMENT: Forces perfectly alternating left and right blocks based on index
+            className={`mb-20 flex flex-col md:flex-row gap-10 ${
+              index % 2 !== 0 ? "md:justify-end" : "md:justify-start"
+            }`}
           >
             <div className="w-full md:w-1/2 relative">
-              {/* EDIT + DELETE */}
               {editMode && (
-                <div className="absolute top-3 right-3 flex gap-2">
+                <div className="absolute top-3 right-3 flex gap-2 z-10">
                   <button
                     onClick={() => handleEdit(index)}
                     className="bg-black text-white text-xs px-2 py-1"
@@ -158,7 +214,7 @@ export default function Projects({ editMode }) {
                   </button>
 
                   <button
-                    onClick={() => handleDelete(item.id)}
+                    onClick={() => handleDelete(item._id || item.id)}
                     className="bg-red-500 text-white text-xs px-2 py-1"
                   >
                     Delete
@@ -166,14 +222,14 @@ export default function Projects({ editMode }) {
                 </div>
               )}
 
-              {/* NUMBER */}
-              <span className="absolute top-3 left-3 bg-gray-200 text-sm px-3 py-1">
+              <span className="absolute top-3 left-3 bg-gray-200 text-sm px-3 py-1 z-10">
                 {String(index + 1).padStart(2, "0")}
               </span>
 
               <img
                 src={item.img}
-                className="w-full h-[300px] md:h-[350px] object-cover"
+                alt={`Project ${index + 1}`}
+                className="w-full h-[300px] md:h-[350px] object-cover relative z-0"
               />
 
               <p className="text-xs bg-[#D9D9D9] p-3 text-gray-600">
@@ -186,44 +242,62 @@ export default function Projects({ editMode }) {
 
       {/* ADD MODAL */}
       {openAddModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white p-6 w-[400px]">
             <textarea
               name="desc"
+              value={newData.desc}
               onChange={handleChange}
               className="border p-2 w-full mb-2"
+              placeholder="Project Description"
             />
             <input type="file" onChange={handleImage} className="mb-3" />
 
-            <button
-              onClick={handleAdd}
-              className="bg-black text-white px-4 py-2"
-            >
-              Add
-            </button>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setOpenAddModal(false)}
+                className="bg-gray-300 px-4 py-2"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAdd}
+                className="bg-black text-white px-4 py-2"
+              >
+                Add
+              </button>
+            </div>
           </div>
         </div>
       )}
 
       {/* EDIT MODAL */}
       {openEditModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white p-6 w-[400px]">
             <textarea
               name="desc"
-              value={editData.desc}
+              value={editData?.desc || ""}
               onChange={handleEditChange}
               className="border p-2 w-full mb-2"
             />
 
             <input type="file" onChange={handleEditImage} className="mb-3" />
 
-            <button
-              onClick={handleUpdate}
-              className="bg-black text-white px-4 py-2"
-            >
-              Update
-            </button>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setOpenEditModal(false)}
+                className="bg-gray-300 px-4 py-2"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleUpdate}
+                className="bg-black text-white px-4 py-2"
+              >
+                Update
+              </button>
+            </div>
           </div>
         </div>
       )}
