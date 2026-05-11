@@ -3,7 +3,7 @@ import axios from "axios";
 
 const API = axios.create({
   // Replace this with your actual backend URL/port
-  baseURL: `https://archivek-professional-architecture.vercel.app/services`,
+  baseURL: `https://dealbuzzz-backend-with-typescript.onrender.com`,
 });
 
 export default API; // <-- This default export is crucial!

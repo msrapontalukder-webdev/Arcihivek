@@ -1,4 +1,3 @@
-import AboutSnd from "../Components/AboutSnd";
 export default function About() {
   return (
     <section className="bg-white pt-[100px] md:pt-[140px] pb-12 overflow-hidden">

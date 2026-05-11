@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "../hooks/axios"; // Adjust path if your axios hook is elsewhere
 
-const BASE_URL = "https://archivek-professional-architecture.vercel.app";
-
 export default function Footer({ editMode }) {
   // 1. Initial State (Fallback data)
   const [footer, setFooter] = useState({
