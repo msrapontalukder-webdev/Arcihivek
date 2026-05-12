@@ -19,10 +19,16 @@ export default function ProductManager() {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
+
+  // Modal & Form State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState("add");
   const [formData, setFormData] = useState(emptyProduct);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Search & Responsive Sidebar State
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // ================= FETCH DATA (READ) =================
   const fetchProducts = async () => {
@@ -53,22 +59,37 @@ export default function ProductManager() {
     fetchProducts();
   }, []);
 
-  const totalItems = products.length;
+  // ================= SEARCH & PAGINATION LOGIC =================
+  // Filter products based on search query
+  const filteredProducts = products.filter((product) => {
+    const title = product.title || product.name || "";
+    return title.toLowerCase().includes(searchQuery.toLowerCase());
+  });
+
+  const totalItems = filteredProducts.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = products.slice(indexOfFirstItem, indexOfLastItem);
+  const currentItems = filteredProducts.slice(
+    indexOfFirstItem,
+    indexOfLastItem,
+  );
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
   const goToNextPage = () =>
     setCurrentPage((prev) => Math.min(prev + 1, totalPages));
   const goToPrevPage = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
 
+  // Reset to page 1 when searching
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
   useEffect(() => {
     if (currentPage > totalPages && totalPages > 0) {
       setCurrentPage(totalPages);
     }
-  }, [products.length, currentPage, totalPages]);
+  }, [filteredProducts.length, currentPage, totalPages]);
 
   // ================= MODAL HANDLERS =================
   const openModal = (mode, product = null) => {
@@ -120,11 +141,9 @@ export default function ProductManager() {
 
     try {
       if (modalMode === "add") {
-        // Updated to hit /create-product matching your backend router
         await axios.post(`${BASE_URL}/product/create-product`, payload);
       } else {
         const targetId = formData._id || formData.id;
-        // Updated to use PATCH and hit /update-product/:id
         await axios.patch(
           `${BASE_URL}/product/update-product/${targetId}`,
           payload,
@@ -148,7 +167,6 @@ export default function ProductManager() {
       return;
 
     try {
-      // Updated to hit /delete-product/:id matching your backend router
       await axios.delete(`${BASE_URL}/product/delete-product/${id}`);
       setProducts(products.filter((p) => p._id !== id && p.id !== id));
     } catch (error) {
@@ -159,24 +177,57 @@ export default function ProductManager() {
 
   return (
     <div className="flex h-screen bg-[#0E1117] text-gray-300 font-sans overflow-hidden">
+      {/* Mobile Sidebar Overlay */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/70 z-20 md:hidden transition-opacity"
+          onClick={() => setIsSidebarOpen(false)}
+        ></div>
+      )}
+
       {/* ================= LEFT SIDEBAR ================= */}
-      <aside className="w-[240px] bg-[#141821] border-r border-[#242936] flex flex-col hidden md:flex shrink-0 z-10">
-        <div className="p-6">
-          <div className="flex items-center gap-3 text-white font-bold text-xl tracking-wider mb-1">
-            <div className="grid grid-cols-2 gap-1 w-5 h-5">
-              <div className="bg-indigo-500 rounded-sm"></div>
-              <div className="bg-indigo-500 rounded-sm"></div>
-              <div className="bg-indigo-500 rounded-sm"></div>
-              <div className="bg-indigo-500 rounded-sm"></div>
+      <aside
+        className={`fixed md:static inset-y-0 left-0 w-[240px] bg-[#141821] border-r border-[#242936] flex flex-col z-30 transform transition-transform duration-300 ease-in-out md:translate-x-0 ${
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <div className="p-6 flex justify-between items-start">
+          <div>
+            <div className="flex items-center gap-3 text-white font-bold text-xl tracking-wider mb-1">
+              <div className="grid grid-cols-2 gap-1 w-5 h-5">
+                <div className="bg-indigo-500 rounded-sm"></div>
+                <div className="bg-indigo-500 rounded-sm"></div>
+                <div className="bg-indigo-500 rounded-sm"></div>
+                <div className="bg-indigo-500 rounded-sm"></div>
+              </div>
+              DEALBUZZ
             </div>
-            DEALBUZZ
+            <p className="text-xs text-gray-500 font-medium ml-8">
+              Admin Console
+            </p>
           </div>
-          <p className="text-xs text-gray-500 font-medium ml-8">
-            Admin Console
-          </p>
+          {/* Close button (Mobile Only) */}
+          <button
+            className="md:hidden text-gray-400 hover:text-white"
+            onClick={() => setIsSidebarOpen(false)}
+          >
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M6 18L18 6M6 6l12 12"
+              ></path>
+            </svg>
+          </button>
         </div>
 
-        <nav className="flex-1 px-4 py-4 space-y-1">
+        <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
           {[
             {
               name: "Dashboard",
@@ -240,26 +291,71 @@ export default function ProductManager() {
 
       {/* ================= MAIN CONTENT ================= */}
       <div className="flex-1 flex flex-col h-full overflow-hidden relative">
-        <header className="h-[72px] border-b border-[#242936] flex items-center justify-between px-8 shrink-0 bg-[#0E1117] z-10">
-          <div className="flex items-center gap-8">
-            <h2 className="text-white font-bold tracking-wider hidden lg:block">
+        <header className="h-[72px] border-b border-[#242936] flex items-center justify-between px-4 sm:px-8 shrink-0 bg-[#0E1117] z-10">
+          <div className="flex items-center gap-4 sm:gap-8 flex-1">
+            {/* Hamburger Button (Mobile Only) */}
+            <button
+              className="md:hidden text-gray-400 hover:text-white"
+              onClick={() => setIsSidebarOpen(true)}
+            >
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M4 6h16M4 12h16M4 18h16"
+                ></path>
+              </svg>
+            </button>
+
+            <h2 className="text-white font-bold tracking-wider hidden lg:block shrink-0">
               DEALBUZZ
             </h2>
-            <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-gray-400">
-              <a href="#" className="hover:text-white transition-colors">
-                New Arrivals
-              </a>
-              <a href="#" className="hover:text-white transition-colors">
-                Best Sellers
-              </a>
-              <a href="#" className="hover:text-white transition-colors">
-                Categories
-              </a>
-            </nav>
+
+            {/* Search Box */}
+            <div className="relative flex-1 max-w-md">
+              <svg
+                className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                ></path>
+              </svg>
+              <input
+                type="text"
+                placeholder="Search products..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-[#1A202C] text-sm text-white rounded-full pl-9 pr-4 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-500 border border-[#2A3143]"
+              />
+            </div>
           </div>
+
+          <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-gray-400 ml-4">
+            <a href="#" className="hover:text-white transition-colors">
+              New Arrivals
+            </a>
+            <a href="#" className="hover:text-white transition-colors">
+              Best Sellers
+            </a>
+            <a href="#" className="hover:text-white transition-colors">
+              Categories
+            </a>
+          </nav>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-8 flex gap-8">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-8 flex gap-8">
           <div className="w-64 shrink-0 hidden xl:flex flex-col gap-6">
             <div className="bg-[#141821] rounded-xl p-5 border border-[#242936]">
               <h3 className="text-white font-bold text-lg mb-4">Filters</h3>
@@ -333,7 +429,7 @@ export default function ProductManager() {
               <div className="flex items-center gap-4">
                 <button
                   onClick={() => openModal("add")}
-                  className="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium py-2.5 px-5 rounded-lg transition-colors flex items-center gap-2 shadow-lg shadow-indigo-600/20"
+                  className="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium py-2.5 px-5 rounded-lg transition-colors flex items-center gap-2 shadow-lg shadow-indigo-600/20 w-full sm:w-auto justify-center"
                 >
                   <svg
                     className="w-4 h-4"
@@ -358,7 +454,7 @@ export default function ProductManager() {
                 <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-500"></div>
               </div>
             ) : totalItems === 0 ? (
-              <div className="flex-1 flex flex-col justify-center items-center bg-[#141821] border border-[#242936] rounded-xl border-dashed">
+              <div className="flex-1 flex flex-col justify-center items-center bg-[#141821] border border-[#242936] rounded-xl border-dashed p-8 text-center">
                 <p className="text-gray-400 text-lg mb-4">No products found.</p>
                 <button
                   onClick={() => openModal("add")}
@@ -368,7 +464,7 @@ export default function ProductManager() {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {currentItems.map((product) => (
                   <div
                     key={product._id || product.id}
@@ -420,7 +516,7 @@ export default function ProductManager() {
                             ).toFixed(2)}
                           </span>
                         </div>
-                        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex gap-2 sm:opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
                             onClick={() => openModal("edit", product)}
                             className="p-1.5 bg-[#1A202C] text-gray-300 hover:text-white hover:bg-indigo-600 rounded-md transition-colors"
@@ -470,7 +566,7 @@ export default function ProductManager() {
             )}
 
             {!loading && totalPages > 1 && (
-              <div className="mt-8 mb-4 flex justify-center items-center gap-2">
+              <div className="mt-8 mb-4 flex flex-wrap justify-center items-center gap-2">
                 <button
                   onClick={goToPrevPage}
                   disabled={currentPage === 1}
@@ -530,6 +626,7 @@ export default function ProductManager() {
         </div>
       </div>
 
+      {/* ================= MODAL ================= */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="bg-[#1f2130] w-full max-w-md rounded-xl border border-gray-800 shadow-2xl overflow-hidden animate-[fadeIn_0.2s_ease-out]">
@@ -556,7 +653,10 @@ export default function ProductManager() {
                 </svg>
               </button>
             </div>
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <form
+              onSubmit={handleSubmit}
+              className="p-6 space-y-4 max-h-[80vh] overflow-y-auto"
+            >
               <div>
                 <label className="block text-sm text-gray-400 mb-1">
                   Title
