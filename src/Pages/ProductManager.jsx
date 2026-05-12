@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import axios from "../hooks/axios"; // Adjust path as needed
+import { Link } from "react-router-dom";
+import axios from "../hooks/axios";
 
 const BASE_URL = "https://dealbuzzz-backend-with-typescript.onrender.com";
 
@@ -14,15 +15,10 @@ const emptyProduct = {
 };
 
 export default function ProductManager() {
-  // --- STATE ---
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
-
-  // Modal & Form State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState("add");
   const [formData, setFormData] = useState(emptyProduct);
@@ -33,8 +29,8 @@ export default function ProductManager() {
     try {
       setLoading(true);
       const response = await axios.get(`${BASE_URL}/product/get-product`);
-
       const productData = response.data?.data || response.data;
+
       if (Array.isArray(productData)) {
         setProducts(productData);
       } else if (
@@ -57,7 +53,6 @@ export default function ProductManager() {
     fetchProducts();
   }, []);
 
-  // ================= PAGINATION LOGIC =================
   const totalItems = products.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -69,7 +64,6 @@ export default function ProductManager() {
     setCurrentPage((prev) => Math.min(prev + 1, totalPages));
   const goToPrevPage = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
 
-  // Reset to page 1 if data changes and current page becomes empty
   useEffect(() => {
     if (currentPage > totalPages && totalPages > 0) {
       setCurrentPage(totalPages);
@@ -116,7 +110,6 @@ export default function ProductManager() {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Format payload for backend
     const payload = {
       ...formData,
       price: Number(formData.price),
@@ -127,10 +120,15 @@ export default function ProductManager() {
 
     try {
       if (modalMode === "add") {
-        await axios.post(`${BASE_URL}/product/create`, payload);
+        // Updated to hit /create-product matching your backend router
+        await axios.post(`${BASE_URL}/product/create-product`, payload);
       } else {
         const targetId = formData._id || formData.id;
-        await axios.put(`${BASE_URL}/product/update/${targetId}`, payload);
+        // Updated to use PATCH and hit /update-product/:id
+        await axios.patch(
+          `${BASE_URL}/product/update-product/${targetId}`,
+          payload,
+        );
       }
 
       await fetchProducts();
@@ -146,12 +144,12 @@ export default function ProductManager() {
   // ================= DELETE HANDLER =================
   const handleDelete = async (id) => {
     if (!id) return;
-    if (!window.confirm("Are you sure you want to delete this product?")) {
+    if (!window.confirm("Are you sure you want to delete this product?"))
       return;
-    }
 
     try {
-      await axios.delete(`${BASE_URL}/product/delete/${id}`);
+      // Updated to hit /delete-product/:id matching your backend router
+      await axios.delete(`${BASE_URL}/product/delete-product/${id}`);
       setProducts(products.filter((p) => p._id !== id && p.id !== id));
     } catch (error) {
       console.error("Error deleting product:", error);
@@ -182,30 +180,39 @@ export default function ProductManager() {
           {[
             {
               name: "Dashboard",
+              path: "/",
               icon: "M3 3h7v7H3z M14 3h7v7h-7z M14 14h7v7h-7z M3 14h7v7H3z",
             },
             {
               name: "Products",
+              path: "/products",
               icon: "M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4",
               active: true,
             },
             {
               name: "Customers",
+              path: "#",
               icon: "M12 12a4 4 0 100-8 4 4 0 000 8zm-8 9a8 8 0 1116 0",
             },
             {
               name: "Orders",
+              path: "#",
               icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2",
             },
-            { name: "Analytics", icon: "M18 20V10 M12 20V4 M6 20v-6" },
+            {
+              name: "Analytics",
+              path: "#",
+              icon: "M18 20V10 M12 20V4 M6 20v-6",
+            },
             {
               name: "Settings",
+              path: "#",
               icon: "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z",
             },
           ].map((item) => (
-            <a
+            <Link
               key={item.name}
-              href="#"
+              to={item.path}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${
                 item.active
                   ? "bg-indigo-500 text-white shadow-lg shadow-indigo-500/20"
@@ -226,14 +233,13 @@ export default function ProductManager() {
                 ></path>
               </svg>
               {item.name}
-            </a>
+            </Link>
           ))}
         </nav>
       </aside>
 
       {/* ================= MAIN CONTENT ================= */}
       <div className="flex-1 flex flex-col h-full overflow-hidden relative">
-        {/* Top Navbar */}
         <header className="h-[72px] border-b border-[#242936] flex items-center justify-between px-8 shrink-0 bg-[#0E1117] z-10">
           <div className="flex items-center gap-8">
             <h2 className="text-white font-bold tracking-wider hidden lg:block">
@@ -253,9 +259,7 @@ export default function ProductManager() {
           </div>
         </header>
 
-        {/* Dashboard Content */}
         <div className="flex-1 overflow-y-auto p-8 flex gap-8">
-          {/* Filters Sidebar */}
           <div className="w-64 shrink-0 hidden xl:flex flex-col gap-6">
             <div className="bg-[#141821] rounded-xl p-5 border border-[#242936]">
               <h3 className="text-white font-bold text-lg mb-4">Filters</h3>
@@ -286,7 +290,6 @@ export default function ProductManager() {
               </div>
             </div>
 
-            {/* Active Inventory Card */}
             <div className="bg-[#141821] rounded-xl p-5 border border-[#242936]">
               <div className="flex justify-between items-center mb-2">
                 <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
@@ -306,7 +309,6 @@ export default function ProductManager() {
                   ></path>
                 </svg>
               </div>
-              {/* Dynamic Total Items Count */}
               <p className="text-2xl font-bold text-white mb-2">
                 {totalItems} Items
               </p>
@@ -316,9 +318,7 @@ export default function ProductManager() {
             </div>
           </div>
 
-          {/* Product Catalog Grid */}
           <div className="flex-1 flex flex-col min-w-0">
-            {/* Header Area */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
               <div>
                 <h1 className="text-2xl font-bold text-white mb-1">
@@ -330,7 +330,6 @@ export default function ProductManager() {
                   products
                 </p>
               </div>
-
               <div className="flex items-center gap-4">
                 <button
                   onClick={() => openModal("add")}
@@ -354,7 +353,6 @@ export default function ProductManager() {
               </div>
             </div>
 
-            {/* Grid Area */}
             {loading ? (
               <div className="flex-1 flex justify-center items-center">
                 <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-500"></div>
@@ -371,13 +369,11 @@ export default function ProductManager() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {/* Loop over currentItems instead of products */}
                 {currentItems.map((product) => (
                   <div
                     key={product._id || product.id}
                     className="bg-[#141821] rounded-xl border border-[#242936] overflow-hidden group flex flex-col hover:border-indigo-500/50 transition-colors"
                   >
-                    {/* Image Area */}
                     <div className="h-48 relative bg-gradient-to-b from-[#1E2330] to-[#141821] p-6 flex items-center justify-center">
                       {product.tag && (
                         <span
@@ -400,20 +396,16 @@ export default function ProductManager() {
                         className="max-w-full max-h-full object-contain drop-shadow-2xl group-hover:scale-105 transition-transform duration-300"
                       />
                     </div>
-
-                    {/* Content Area */}
                     <div className="p-5 flex-1 flex flex-col">
                       <div className="flex justify-between items-start gap-2 mb-1">
                         <h3 className="text-white font-bold text-lg leading-tight line-clamp-2">
                           {product.title || product.name}
                         </h3>
                       </div>
-
                       <p className="text-sm text-gray-400 line-clamp-2 mb-4 mt-2">
                         {product.description ||
                           "No description provided for this item."}
                       </p>
-
                       <div className="mt-auto flex items-end justify-between">
                         <div>
                           {product.discountPrice && (
@@ -428,8 +420,6 @@ export default function ProductManager() {
                             ).toFixed(2)}
                           </span>
                         </div>
-
-                        {/* EDIT / DELETE ACTIONS */}
                         <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
                             onClick={() => openModal("edit", product)}
@@ -479,7 +469,6 @@ export default function ProductManager() {
               </div>
             )}
 
-            {/* Pagination Controls */}
             {!loading && totalPages > 1 && (
               <div className="mt-8 mb-4 flex justify-center items-center gap-2">
                 <button
@@ -501,7 +490,6 @@ export default function ProductManager() {
                     ></path>
                   </svg>
                 </button>
-
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map(
                   (number) => (
                     <button
@@ -517,7 +505,6 @@ export default function ProductManager() {
                     </button>
                   ),
                 )}
-
                 <button
                   onClick={goToNextPage}
                   disabled={currentPage === totalPages}
@@ -543,11 +530,9 @@ export default function ProductManager() {
         </div>
       </div>
 
-      {/* ================= MODAL ================= */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="bg-[#1f2130] w-full max-w-md rounded-xl border border-gray-800 shadow-2xl overflow-hidden animate-[fadeIn_0.2s_ease-out]">
-            {/* Modal Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-800">
               <h2 className="text-xl font-semibold text-white">
                 {modalMode === "add" ? "Add New Product" : "Edit Product"}
@@ -571,8 +556,6 @@ export default function ProductManager() {
                 </svg>
               </button>
             </div>
-
-            {/* Modal Form */}
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
                 <label className="block text-sm text-gray-400 mb-1">
@@ -588,7 +571,6 @@ export default function ProductManager() {
                   placeholder="Product name"
                 />
               </div>
-
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm text-gray-400 mb-1">
@@ -620,7 +602,6 @@ export default function ProductManager() {
                   />
                 </div>
               </div>
-
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm text-gray-400 mb-1">
@@ -652,7 +633,6 @@ export default function ProductManager() {
                   />
                 </div>
               </div>
-
               <div>
                 <label className="block text-sm text-gray-400 mb-1">
                   Image URL
@@ -666,7 +646,6 @@ export default function ProductManager() {
                   placeholder="https://..."
                 />
               </div>
-
               <div>
                 <label className="block text-sm text-gray-400 mb-1">
                   Description
@@ -681,7 +660,6 @@ export default function ProductManager() {
                   placeholder="Details..."
                 />
               </div>
-
               <div className="pt-4 flex justify-end gap-3 border-t border-gray-800">
                 <button
                   type="button"
@@ -706,7 +684,6 @@ export default function ProductManager() {
           </div>
         </div>
       )}
-
       <style
         dangerouslySetInnerHTML={{
           __html: `@keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }`,

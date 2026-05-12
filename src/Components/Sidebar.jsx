@@ -1,12 +1,18 @@
+import React from "react";
+import { Link, useLocation } from "react-router-dom";
+
 export default function Sidebar() {
+  const location = useLocation();
+
+  // Updated to include paths for routing
   const menuItems = [
-    "Dashboard",
-    "Statistics",
-    "Payment",
-    "Transactions",
-    "Products",
-    "Customer",
-    "Messages",
+    { name: "Dashboard", path: "/" },
+    { name: "Statistics", path: "/statistics" },
+    { name: "Payment", path: "/payment" },
+    { name: "Transactions", path: "/transactions" },
+    { name: "Products", path: "/products" },
+    { name: "Customer", path: "/customer" },
+    { name: "Messages", path: "/messages" },
   ];
 
   return (
@@ -19,23 +25,33 @@ export default function Sidebar() {
       </div>
 
       <nav className="flex-1 px-4 space-y-2">
-        {menuItems.map((item) => (
-          <div
-            key={item}
-            className={`px-4 py-3 rounded-lg cursor-pointer transition-colors ${
-              item === "Dashboard"
-                ? "bg-blue-600 text-white"
-                : "text-gray-400 hover:text-white hover:bg-[#2e3047]"
-            }`}
-          >
-            {item}
-          </div>
-        ))}
+        {menuItems.map((item) => {
+          // Check if the current URL matches the item's path
+          const isActive = location.pathname === item.path;
+
+          return (
+            <Link
+              key={item.name}
+              to={item.path}
+              className={`block px-4 py-3 rounded-lg transition-colors ${
+                isActive
+                  ? "bg-blue-600 text-white"
+                  : "text-gray-400 hover:text-white hover:bg-[#2e3047]"
+              }`}
+            >
+              {item.name}
+            </Link>
+          );
+        })}
       </nav>
 
       <div className="px-8 pb-8 space-y-4 text-gray-400">
-        <div className="cursor-pointer hover:text-white">Settings</div>
-        <div className="cursor-pointer hover:text-white">Logout</div>
+        <div className="cursor-pointer hover:text-white transition-colors">
+          Settings
+        </div>
+        <div className="cursor-pointer hover:text-white transition-colors">
+          Logout
+        </div>
       </div>
     </aside>
   );

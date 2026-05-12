@@ -6,11 +6,10 @@ import Product from "./Components/Product";
 import Navbar from "./Components/Navbar";
 import Services from "./Components/Service";
 
-import Footer from "./Components/Footer";
-
-import DealBuzzDashboard from "./Components/DealBuzzDashboard";
+import DealBuzzDashboard from "./Pages/DealBuzzDashboard";
 import ProductCard from "./Components/ProductCard";
-import ProductManager from "./Components/ProductManager";
+
+import ProductManager from "./Pages/ProductManager";
 
 //  Main Layout
 function Home({ editMode }) {
@@ -36,8 +35,6 @@ function Home({ editMode }) {
 
         <section id="contact"></section>
       </div>
-
-      <Footer editMode={editMode} />
     </>
   );
 }
@@ -46,10 +43,10 @@ export default function App() {
   return (
     <Router>
       <Routes>
-        {/* NORMAL PAGE */}
-        <Route path="/" element={<Home editMode={false} />} />
-        {/* EDIT PAGE */}
-        <Route path="/edit" element={<Home editMode={true} />} />
+        {/* Default route loads the Dashboard */}
+        <Route path="/" element={<DealBuzzDashboard />} />
+        {/* /products route loads the Product Manager */}
+        <Route path="/products" element={<ProductManager />} />
       </Routes>
     </Router>
   );
